@@ -9,9 +9,9 @@ function deleteAfterTimeout(filePath, timeout = 5000) {
     if (fs.existsSync(filePath)) {
       fs.unlink(filePath, (err) => {
         if (!err) {
-          console.log(`✅ Deleted file: ${filePath}`);
+          console.log(✅ Deleted file: ${filePath});
         } else {
-          console.error(`❌ Error deleting file: ${filePath}`);
+          console.error(❌ Error deleting file: ${err.message});
         }
       });
     }
@@ -20,61 +20,89 @@ function deleteAfterTimeout(filePath, timeout = 5000) {
 
 module.exports = {
   config: {
-    name: "music",
-    version: "1.0.4",
+    name: "song",
+    version: "2.0.2",
     hasPermssion: 0,
     credits: "Mirrykal",
-    description: "Download YouTube song from keyword search",
+    description: "Download YouTube song or video",
     commandCategory: "Media",
-    usages: "[songName]",
+    usages: "[songName] [optional: video]",
     cooldowns: 5,
   },
 
   run: async function ({ api, event, args }) {
     if (args.length === 0) {
-      return api.sendMessage("⚠️ Song ka name likh ker de bai, ab tere dimaag se to nahi nikaal sakta ke kia chaye tujy 😡", event.threadID);
+      return api.sendMessage("⚠ Gaane ka naam to likho na! 😒", event.threadID);
     }
 
-    const songName = args.join(" ");
+    const mediaType = args[args.length - 1].toLowerCase() === "video" ? "video" : "audio";
+    const songName = mediaType === "video" ? args.slice(0, -1).join(" ") : args.join(" ");
+
     const processingMessage = await api.sendMessage(
-      `apny babu ke liey song dhund rha hun 😙 thoora sa wait ker bejhta hun🥱😇 "${songName}"...`,
+      🔍 "${songName}" dhoondh rahi hoon... Ruko zara! 😏,
       event.threadID,
       null,
       event.messageID
     );
 
     try {
-      // 🔎 **YouTube पर Search**
+      // 🔎 *YouTube Search*
       const searchResults = await ytSearch(songName);
       if (!searchResults || !searchResults.videos.length) {
-        throw new Error("Appun ko nahi mila tera Search 🔍😿.");
+        throw new Error("Kuch nahi mila! Gaane ka naam sahi likho. 😑");
       }
 
-      // 🎵 **टॉप Result का URL**
+      // 🎵 *Top Result ka URL*
       const topResult = searchResults.videos[0];
-      const videoUrl = `https://www.youtube.com/watch?v=${topResult.videoId}`;
+      const videoUrl = https://www.youtube.com/watch?v=${topResult.videoId};
 
-      // 🖥 **API Call to Your YouTube Downloader**
-      const apiUrl = `https://arun-music.onrender.com//download?url=${encodeURIComponent(videoUrl)}`;
-      const downloadResponse = await axios.get(apiUrl);
-
-      if (!downloadResponse.data.file_url) {
-        throw new Error("Download failed. API did not return a file URL.");
-      }
-
-      const downloadUrl = downloadResponse.data.file_url.replace("http:", "https:"); // 🛠 Fix http → https
-
-      // 📂 **Set Download Path**
+      // 🖼 *Download Thumbnail*
+      const thumbnailUrl = topResult.thumbnail;
+      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9]/g, "_");
       const downloadDir = path.join(__dirname, "cache");
       if (!fs.existsSync(downloadDir)) {
         fs.mkdirSync(downloadDir, { recursive: true });
       }
+      const thumbnailPath = path.join(downloadDir, ${safeTitle}.jpg);
 
-      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9]/g, "_");
-      const filename = `${safeTitle}.mp3`;
+      const thumbnailFile = fs.createWriteStream(thumbnailPath);
+      await new Promise((resolve, reject) => {
+        https.get(thumbnailUrl, (response) => {
+          response.pipe(thumbnailFile);
+          thumbnailFile.on("finish", () => {
+            thumbnailFile.close(resolve);
+          });
+        }).on("error", (error) => {
+          fs.unlinkSync(thumbnailPath);
+          reject(new Error(Thumbnail download failed: ${error.message}));
+        });
+      });
+
+      // 📩 *Send Thumbnail First*
+      await api.sendMessage(
+        {
+          attachment: fs.createReadStream(thumbnailPath),
+          body: 🎶 **Title:** ${topResult.title}\n👀 ..Thoda sa Wait kro Song load Horha hai 😘,
+        },
+        event.threadID
+      );
+
+      // 🗑 *Delete Thumbnail After 5 Seconds*
+      deleteAfterTimeout(thumbnailPath, 5000);
+
+      // 🖥 *API Call to YouTube Downloader*
+      const apiUrl = https://music-hax2.onrender.com/download?url=${encodeURIComponent(videoUrl)}&type=${mediaType};
+      const downloadResponse = await axios.get(apiUrl);
+
+      if (!downloadResponse.data.file_url) {
+        throw new Error("Download fail ho gaya. 😭");
+      }
+
+      const downloadUrl = downloadResponse.data.file_url.replace("http:", "https:");
+      const filename = ${safeTitle}.${mediaType === "video" ? "mp4" : "mp3"};
       const downloadPath = path.join(downloadDir, filename);
 
-      // ⬇️ **Download File**
+      // ⬇ *Download Media File*
       const file = fs.createWriteStream(downloadPath);
       await new Promise((resolve, reject) => {
         https.get(downloadUrl, (response) => {
@@ -84,31 +112,31 @@ module.exports = {
               file.close(resolve);
             });
           } else {
-            reject(new Error(`Failed to download file. Status code: ${response.statusCode}`));
+            reject(new Error(Download fail ho gaya. Status: ${response.statusCode}));
           }
         }).on("error", (error) => {
           fs.unlinkSync(downloadPath);
-          reject(new Error(`Error downloading file: ${error.message}`));
+          reject(new Error(Error downloading file: ${error.message}));
         });
       });
 
       api.setMessageReaction("✅", event.messageID, () => {}, true);
 
-      // 🎧 **Send the MP3 File**
+      // 🎧 *Send the MP3/MP4 File*
       await api.sendMessage(
         {
           attachment: fs.createReadStream(downloadPath),
-          body: `🎶 Title: ${topResult.title}\nHere is your song:`,
+          body: 🎵 **Aapka ${mediaType === "video" ? "Video 🎥" : "Gaana 🎧"} taiyaar hai!**\nEnjoy! 😍,
         },
         event.threadID,
         event.messageID
       );
 
-      // 🗑 **Auto Delete File After 5 Seconds**
+      // 🗑 *Auto Delete File After 5 Seconds*
       deleteAfterTimeout(downloadPath, 5000);
     } catch (error) {
-      console.error(`❌ Error: ${error.message}`);
-      api.sendMessage(`❌ Failed: ${error.message}`, event.threadID, event.messageID);
-    }
-  },
+      console.error(❌ Error: ${error.message});
+      api.sendMessage(❌ Error: ${error.message} 😢, event.threadID, event.messageID);
+    }
+  },
 };
