@@ -16,7 +16,7 @@ module.exports.config = {
 
 // 🔹 Tumhari APIs
 const API_URLS = {
-    "Rizwan":  "https://rizuu-th6k.onrender.com"
+    "Rizwan":  "https://rizuu-bcru.onrender.com"
 };
 
 // 🔹 API Check Function (Ping Only)
