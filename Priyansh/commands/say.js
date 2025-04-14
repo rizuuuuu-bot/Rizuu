@@ -3,7 +3,7 @@ module.exports = {
     name: "say",
     version: "3.0.0",
     hasPermssion: 0,
-    credits: "Mirrykal",
+    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
     description: "Speak text using predefined ElevenLabs voices",
     commandCategory: "voice",
     usages: "[1-5] [text] || speak list",
