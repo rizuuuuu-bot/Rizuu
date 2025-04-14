@@ -1,6 +1,6 @@
 module.exports = {
   config: {
-    name: "sir",
+    name: "speak",
     version: "3.0.0",
     hasPermssion: 0,
     credits: "Mirrykal",
