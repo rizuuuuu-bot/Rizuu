@@ -21,11 +21,11 @@ jobs:
         run: |
           npm install
 
-      - name: Install yt-dlp
+      - name: Install yt-dlp using apt-get
         run: |
-          npm install yt-dlp
+          sudo apt-get update
+          sudo apt-get install -y yt-dlp
 
       - name: Deploy to Render
         run: |
           echo "Deploying to Render" # Isme apna Render deployment command daal sakte hain.
-          
