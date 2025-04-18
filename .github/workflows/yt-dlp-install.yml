@@ -21,10 +21,9 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install yt-dlp
+      - name: Install yt-dlp via pip
         run: |
-          sudo apt-get update  # Update package list
-          sudo apt-get install -y yt-dlp  # Install yt-dlp with apt-get
+          python -m pip install -U yt-dlp  # Install yt-dlp using pip
 
       - name: Install Node.js
         uses: actions/setup-node@v2  # Setup Node.js
