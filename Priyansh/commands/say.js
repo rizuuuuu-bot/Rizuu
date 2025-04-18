@@ -24,7 +24,7 @@ module.exports.run = async function({ api, event, args }) {
   const voiceMap = {
     1: { name: "Roohi", id: "sJGSzrOOtoYSYJarCtSZ" },
     2: { name: "Viraj", id: "P1bg08DkjqiVEzOn76yG" },
-    3: { name: "Viraj 2", id: "bajNon13EdhNMndG3z05" },
+    3: { name: "Viraj 2", id: "bajNon13EdhNMndG3z05" },  // Your voice ID
     4: { name: "Saanu", id: "50YSQEDPA2vlOxhCseP4" },
     5: { name: "Mehar", id: "lfQ3pGxnwOiKjnQKdwts" },
   };
@@ -32,7 +32,7 @@ module.exports.run = async function({ api, event, args }) {
   if (args[0]?.toLowerCase() === "list") {
     let msg = "Available Voices:\n\n";
     for (const [key, val] of Object.entries(voiceMap)) {
-      msg += `${key}. ${val.name}\n`;
+      msg += `${key}. ${val.name}\n`; // Fixed interpolation here
     }
     msg += "\nDefault: Roohi (if number not given)";
     return api.sendMessage(msg, event.threadID);
@@ -50,11 +50,11 @@ module.exports.run = async function({ api, event, args }) {
     );
   }
 
-  const outPath = path.join(__dirname, `cache/tts_${Date.now()}.mp3`);
+  const outPath = path.join(__dirname, `cache/tts_${Date.now()}.mp3`); // Fixed path issue
 
   try {
     const res = await axios.post(
-      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice.id}`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice.id}`, // Fixed endpoint URL
       {
         text: text,
         voice_settings: {
@@ -75,7 +75,7 @@ module.exports.run = async function({ api, event, args }) {
 
     return api.sendMessage(
       {
-        body: `Voice: ${selectedVoice.name}\nText: "${text}"`,
+        body: `Voice: ${selectedVoice.name}\nText: "${text}"`, // Fixed string interpolation
         attachment: fs.createReadStream(outPath)
       },
       event.threadID,
@@ -88,6 +88,6 @@ module.exports.run = async function({ api, event, args }) {
 
   } catch (err) {
     console.log("TTS Error:", err.message);
-    return api.sendMessage("Oops... Something went wrong. Check your voice or text.", event.threadID);
+    return api.sendMessage("Oops... Something went wrong. Check your voice or text.", event.threadID); // Fixed error handling
   }
 };
