@@ -5,7 +5,7 @@ const https = require('https');
 
 module.exports = {
   config: {
-    name: "music",
+    name: "song",
     version: "1.0.0",
     description: "Download music via Render API and send it to user",
     commandCategory: "Media",
