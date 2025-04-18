@@ -1,142 +1,77 @@
-const axios = require("axios");
+const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const ytSearch = require("yt-search");
-const https = require("https");
-
-function deleteAfterTimeout(filePath, timeout = 5000) {
-  setTimeout(() => {
-    if (fs.existsSync(filePath)) {
-      fs.unlink(filePath, (err) => {
-        if (!err) {
-          console.log(✅ Deleted file: ${filePath});
-        } else {
-          console.error(❌ Error deleting file: ${err.message});
-        }
-      });
-    }
-  }, timeout);
-}
 
 module.exports = {
   config: {
-    name: "song",
-    version: "2.0.2",
+    name: "music",
+    version: "1.0.3",
     hasPermssion: 0,
-    credits: "Mirrykal",
-    description: "Download YouTube song or video",
+    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
+    description: "Download YouTube song from keyword search and link",
     commandCategory: "Media",
-    usages: "[songName] [optional: video]",
+    usages: "[songName]",
     cooldowns: 5,
   },
 
   run: async function ({ api, event, args }) {
-    if (args.length === 0) {
-      return api.sendMessage("⚠ Gaane ka naam to likho na! 😒", event.threadID);
-    }
-
-    const mediaType = args[args.length - 1].toLowerCase() === "video" ? "video" : "audio";
-    const songName = mediaType === "video" ? args.slice(0, -1).join(" ") : args.join(" ");
-
+    let songName = args.join(" ");
     const processingMessage = await api.sendMessage(
-      🔍 "${songName}" dhoondh rahi hoon... Ruko zara! 😏,
+      "✅ Processing your request. Please wait...",
       event.threadID,
       null,
       event.messageID
     );
 
     try {
-      // 🔎 *YouTube Search*
+      // Search for the song on YouTube
       const searchResults = await ytSearch(songName);
       if (!searchResults || !searchResults.videos.length) {
-        throw new Error("Kuch nahi mila! Gaane ka naam sahi likho. 😑");
+        throw new Error("No results found for your search query.");
       }
 
-      // 🎵 *Top Result ka URL*
+      // Get the top result from the search
       const topResult = searchResults.videos[0];
-      const videoUrl = https://www.youtube.com/watch?v=${topResult.videoId};
+      const videoUrl = `https://www.youtube.com/watch?v=${topResult.videoId}`;
 
-      // 🖼 *Download Thumbnail*
-      const thumbnailUrl = topResult.thumbnail;
-      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9]/g, "_");
-      const downloadDir = path.join(__dirname, "cache");
-      if (!fs.existsSync(downloadDir)) {
-        fs.mkdirSync(downloadDir, { recursive: true });
-      }
-      const thumbnailPath = path.join(downloadDir, ${safeTitle}.jpg);
+      // Construct the output file path
+      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9 \-_]/g, "");
+      const outputPath = path.join(__dirname, "cache", `${safeTitle}.mp3`);
 
-      const thumbnailFile = fs.createWriteStream(thumbnailPath);
-      await new Promise((resolve, reject) => {
-        https.get(thumbnailUrl, (response) => {
-          response.pipe(thumbnailFile);
-          thumbnailFile.on("finish", () => {
-            thumbnailFile.close(resolve);
-          });
-        }).on("error", (error) => {
-          fs.unlinkSync(thumbnailPath);
-          reject(new Error(Thumbnail download failed: ${error.message}));
-        });
+      // Run yt-dlp with cookies to download the song
+      const command = `yt-dlp -x --audio-format mp3 --cookies "cookies.txt" -o "${outputPath}" ${videoUrl}`;
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error downloading song: ${error.message}`);
+          api.sendMessage(`Failed to download song: ${error.message}`, event.threadID);
+          return;
+        }
+        if (stderr) {
+          console.error(`stderr: ${stderr}`);
+          api.sendMessage(`Failed to download song: ${stderr}`, event.threadID);
+          return;
+        }
+
+        console.log(`stdout: ${stdout}`);
+        // Send the file to the user
+        api.sendMessage(
+          {
+            attachment: fs.createReadStream(outputPath),
+            body: `🎶 Here is your song: ${topResult.title}`,
+          },
+          event.threadID,
+          () => {
+            fs.unlinkSync(outputPath); // Cleanup after sending
+            api.unsendMessage(processingMessage.messageID);
+          },
+          event.messageID
+        );
       });
 
-      // 📩 *Send Thumbnail First*
-      await api.sendMessage(
-        {
-          attachment: fs.createReadStream(thumbnailPath),
-          body: 🎶 **Title:** ${topResult.title}\n👀 ..Thoda sa Wait kro Song load Horha hai 😘,
-        },
-        event.threadID
-      );
-
-      // 🗑 *Delete Thumbnail After 5 Seconds*
-      deleteAfterTimeout(thumbnailPath, 5000);
-
-      // 🖥 *API Call to YouTube Downloader*
-      const apiUrl = https://music-hax2.onrender.com/download?url=${encodeURIComponent(videoUrl)}&type=${mediaType};
-      const downloadResponse = await axios.get(apiUrl);
-
-      if (!downloadResponse.data.file_url) {
-        throw new Error("Download fail ho gaya. 😭");
-      }
-
-      const downloadUrl = downloadResponse.data.file_url.replace("http:", "https:");
-      const filename = ${safeTitle}.${mediaType === "video" ? "mp4" : "mp3"};
-      const downloadPath = path.join(downloadDir, filename);
-
-      // ⬇ *Download Media File*
-      const file = fs.createWriteStream(downloadPath);
-      await new Promise((resolve, reject) => {
-        https.get(downloadUrl, (response) => {
-          if (response.statusCode === 200) {
-            response.pipe(file);
-            file.on("finish", () => {
-              file.close(resolve);
-            });
-          } else {
-            reject(new Error(Download fail ho gaya. Status: ${response.statusCode}));
-          }
-        }).on("error", (error) => {
-          fs.unlinkSync(downloadPath);
-          reject(new Error(Error downloading file: ${error.message}));
-        });
-      });
-
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
-
-      // 🎧 *Send the MP3/MP4 File*
-      await api.sendMessage(
-        {
-          attachment: fs.createReadStream(downloadPath),
-          body: 🎵 **Aapka ${mediaType === "video" ? "Video 🎥" : "Gaana 🎧"} taiyaar hai!**\nEnjoy! 😍,
-        },
-        event.threadID,
-        event.messageID
-      );
-
-      // 🗑 *Auto Delete File After 5 Seconds*
-      deleteAfterTimeout(downloadPath, 5000);
     } catch (error) {
-      console.error(❌ Error: ${error.message});
-      api.sendMessage(❌ Error: ${error.message} 😢, event.threadID, event.messageID);
-    }
-  },
+      console.error(`Failed to download and send song: ${error.message}`);
+      api.sendMessage(`Failed to download song: ${error.message}`, event.threadID);
+    }
+  },
 };
