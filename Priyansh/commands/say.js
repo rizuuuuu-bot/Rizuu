@@ -1,5 +1,5 @@
 module.exports.config = {
-  name: "say",
+  name: "speak",
   version: "1.0.1",
   hasPermssion: 0,
   credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
@@ -68,6 +68,13 @@ module.exports.run = async function({ api, event, args }) {
         }
       }
     );
+
+    if (res.status !== 200) {
+      return api.sendMessage(
+        `API Error: Unable to generate speech. Status Code: ${res.status}`,
+        event.threadID
+      );
+    }
 
     // Step 2: Retrieve task_id from the response
     const task_id = res.data.payload.task_id;
