@@ -1,7 +1,7 @@
 const { exec } = require("child_process");
-const fs = require("fs");
 const path = require("path");
 const ytSearch = require("yt-search");
+const fs = require("fs");
 
 module.exports = {
   config: {
@@ -18,7 +18,7 @@ module.exports = {
   run: async function ({ api, event, args }) {
     let songName = args.join(" ");
     const processingMessage = await api.sendMessage(
-      "✅ Processing your request. Please wait...",
+      "Aapke gaane ki talaash mein lag gaye hain, thoda intezaar karein, hum waise bhi apni playlist ki duniya mein kho gaye hain! 🎧",
       event.threadID,
       null,
       event.messageID
@@ -28,7 +28,7 @@ module.exports = {
       // Search for the song on YouTube
       const searchResults = await ytSearch(songName);
       if (!searchResults || !searchResults.videos.length) {
-        throw new Error("No results found for your search query.");
+        throw new Error("Aapke query ka koi result nahi mila!");
       }
 
       // Get the top result from the search
@@ -39,17 +39,19 @@ module.exports = {
       const safeTitle = topResult.title.replace(/[^a-zA-Z0-9 \-_]/g, "");
       const outputPath = path.join(__dirname, "cache", `${safeTitle}.mp3`);
 
-      // Run yt-dlp with cookies to download the song
-      const command = `yt-dlp -x --audio-format mp3 --cookies "cookies.txt" -o "${outputPath}" ${videoUrl}`;
+      // Use the local path for yt-dlp (installed via node_modules)
+      const ytDlpPath = path.join(__dirname, 'node_modules', '.bin', 'yt-dlp');
+      const command = `"${ytDlpPath}" -x --audio-format mp3 --cookies "cookies.txt" -o "${outputPath}" ${videoUrl}`;
+
       exec(command, (error, stdout, stderr) => {
         if (error) {
           console.error(`Error downloading song: ${error.message}`);
-          api.sendMessage(`Failed to download song: ${error.message}`, event.threadID);
+          api.sendMessage(`Gaana download karne mein kuch dikkat aa gayi: ${error.message}`, event.threadID);
           return;
         }
         if (stderr) {
           console.error(`stderr: ${stderr}`);
-          api.sendMessage(`Failed to download song: ${stderr}`, event.threadID);
+          api.sendMessage(`Gaana download karte waqt error: ${stderr}`, event.threadID);
           return;
         }
 
@@ -58,7 +60,7 @@ module.exports = {
         api.sendMessage(
           {
             attachment: fs.createReadStream(outputPath),
-            body: `🎶 Here is your song: ${topResult.title}`,
+            body: `🎶 Aapka gaana yeh raha: ${topResult.title}`,
           },
           event.threadID,
           () => {
@@ -71,7 +73,7 @@ module.exports = {
 
     } catch (error) {
       console.error(`Failed to download and send song: ${error.message}`);
-      api.sendMessage(`Failed to download song: ${error.message}`, event.threadID);
+      api.sendMessage(`Gaana download karne mein problem aayi hai: ${error.message}`, event.threadID);
     }
   },
 };
