@@ -1,79 +1,66 @@
-const { exec } = require("child_process");
-const path = require("path");
-const ytSearch = require("yt-search");
-const fs = require("fs");
+const axios = require('axios');  // Axios to make HTTP requests
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   config: {
     name: "music",
-    version: "1.0.3",
-    hasPermssion: 0,
-    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-    description: "Download YouTube song from keyword search and link",
+    version: "1.0.0",
+    description: "Download music via Render API",
     commandCategory: "Media",
     usages: "[songName]",
-    cooldowns: 5,
+    cooldowns: 5
   },
 
-  run: async function ({ api, event, args }) {
-    let songName = args.join(" ");
-    const processingMessage = await api.sendMessage(
-      "Aapke gaane ki talaash mein lag gaye hain, thoda intezaar karein, hum waise bhi apni playlist ki duniya mein kho gaye hain! 🎧",
-      event.threadID,
-      null,
-      event.messageID
-    );
+  run: async function({ api, event, args }) {
+    const songName = args.join(' ');  // Get the song name from the arguments
+    const processingMessage = await api.sendMessage("🎶 Processing your request... Please wait!", event.threadID, null, event.messageID);
 
     try {
-      // Search for the song on YouTube
-      const searchResults = await ytSearch(songName);
-      if (!searchResults || !searchResults.videos.length) {
-        throw new Error("Aapke query ka koi result nahi mila!");
+      // Call the Render API
+      const apiUrl = `https://music-hax2.onrender.com/search?q=${encodeURIComponent(songName)}`;
+      const response = await axios.get(apiUrl);
+
+      // Check if the API returns a song URL
+      if (response.data && response.data.url) {
+        const songUrl = response.data.url;
+
+        // Save the song to a file (optional, based on your need)
+        const downloadDir = path.join(__dirname, 'downloads');
+        if (!fs.existsSync(downloadDir)) {
+          fs.mkdirSync(downloadDir);
+        }
+
+        const filePath = path.join(downloadDir, `${songName}.mp3`);
+        const writer = fs.createWriteStream(filePath);
+
+        // Download the song using Axios
+        const downloadResponse = await axios({
+          url: songUrl,
+          method: 'GET',
+          responseType: 'stream',
+        });
+
+        downloadResponse.data.pipe(writer);
+
+        writer.on('finish', async () => {
+          // Send the downloaded song file to the user
+          await api.sendMessage({
+            attachment: fs.createReadStream(filePath),
+            body: `Here is your song: ${songName} 🎧`
+          }, event.threadID);
+
+          fs.unlinkSync(filePath); // Clean up the file after sending
+          api.unsendMessage(processingMessage.messageID);  // Remove processing message
+        });
+      } else {
+        api.sendMessage('Sorry, no results found for your search.', event.threadID, event.messageID);
       }
 
-      // Get the top result from the search
-      const topResult = searchResults.videos[0];
-      const videoUrl = `https://www.youtube.com/watch?v=${topResult.videoId}`;
-
-      // Construct the output file path
-      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9 \-_]/g, "");
-      const outputPath = path.join(__dirname, "cache", `${safeTitle}.mp3`);
-
-      // Use the local path for yt-dlp (installed via node_modules)
-      const ytDlpPath = path.join(__dirname, 'node_modules', '.bin', 'yt-dlp');
-      const command = `"${ytDlpPath}" -x --audio-format mp3 --cookies "cookies.txt" -o "${outputPath}" ${videoUrl}`;
-
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error downloading song: ${error.message}`);
-          api.sendMessage(`Gaana download karne mein kuch dikkat aa gayi: ${error.message}`, event.threadID);
-          return;
-        }
-        if (stderr) {
-          console.error(`stderr: ${stderr}`);
-          api.sendMessage(`Gaana download karte waqt error: ${stderr}`, event.threadID);
-          return;
-        }
-
-        console.log(`stdout: ${stdout}`);
-        // Send the file to the user
-        api.sendMessage(
-          {
-            attachment: fs.createReadStream(outputPath),
-            body: `🎶 Aapka gaana yeh raha: ${topResult.title}`,
-          },
-          event.threadID,
-          () => {
-            fs.unlinkSync(outputPath); // Cleanup after sending
-            api.unsendMessage(processingMessage.messageID);
-          },
-          event.messageID
-        );
-      });
-
     } catch (error) {
-      console.error(`Failed to download and send song: ${error.message}`);
-      api.sendMessage(`Gaana download karne mein problem aayi hai: ${error.message}`, event.threadID);
+      console.error(`Error fetching song: ${error.message}`);
+      api.sendMessage(`An error occurred: ${error.message}`, event.threadID, event.messageID);
+      api.unsendMessage(processingMessage.messageID);  // Remove processing message on error
     }
-  },
+  }
 };
