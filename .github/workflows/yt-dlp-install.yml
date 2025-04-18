@@ -38,7 +38,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Deploy bot to Render
-      - name: Deploy to Render
-        run: |
-          echo "Deploying to Render"  # Replace this with your Render deployment command
+      # Start the bot
+      - name: Start the bot
+        run: npm start
