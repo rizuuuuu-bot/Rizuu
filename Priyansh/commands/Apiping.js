@@ -14,9 +14,10 @@ module.exports.config = {
     }
 };
 
-// 🔹 Tumhari APIs
+// 🔹 Tumhari APIs (add multiple APIs here)
 const API_URLS = {
-    "Rizwan":  "https://rizuu-bcru.onrender.com"
+    "bot": "https://rizuu-bcru.onrender.com",
+    "youtube": "https://music-hax2.onrender.com"  // Add your second API here
 };
 
 // 🔹 API Check Function (Ping Only)
