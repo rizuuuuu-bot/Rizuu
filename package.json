@@ -38,7 +38,7 @@
       "@replit/database": "^2.0.2",
       "@supercharge/strings": "^1.28.0",
       "akaneko": "^5.2.3",
-      "axios": "^1.7.2", // <<<=== UPDATED Version for compatibility
+      "axios": "^1.7.2", 
       "body-parser": "^1.20.0",
       "caesar-salad": "^2.1.0",
       "canvas": "^2.9.3",
@@ -57,11 +57,11 @@
       "express": "^4.19.2",
       "extract-zip": "^2.0.1",
       "fb-tools": "0.0.1-security",
-      "fca-priyansh": "^18.0.0", // Assuming this is your messenger library
+      "fca-priyansh": "^18.0.0", 
       "figlet": "^1.5.2",
       "form-data": "^4.0.0",
       "fs-extra": "^10.1.0",
-      "google-tts-api": "^2.0.2", // <<<=== ADDED: Required for Text-to-Speech
+      "google-tts-api": "^2.0.2",
       "googlethis": "^1.2.9",
       "https": "^1.0.0",
       "idioms": "0.0.2",
@@ -83,7 +83,7 @@
       "node-schedule": "^2.1.1",
       "node-schedule-tz": "^1.2.1-4",
       "node-superfetch": "^0.2.3",
-      "npm": "^9.4.2", // Kept original npm version specified by user
+      "npm": "^9.4.2", 
       "npmlog": "^7.0.1",
       "openai": "^3.2.1",
       "opusscript": "0.0.8",
