@@ -8,7 +8,7 @@
       "npm": "10.0.0"
   },
   "scripts": {
-      "start": "node Priyansh.js", // <<<=== CORRECTED: Points to your main file
+      "start": "node Priyansh.js",
       "login": "node login",
       "test": "node --trace-warnings --use_strict --async-stack-traces mirai"
   },
