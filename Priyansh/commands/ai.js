@@ -19,7 +19,7 @@ Agar koi tumhara naam pooche toh batana ke 'Mera naam Mirchi hai'. Agar koi pooc
 // --- --- --- --- --- --- --- --- ---
 
 module.exports.config = {
-    name: "babu", // Command name remains the same
+    name: "janu", // Command name remains the same
     version: "3.4.0", // Version updated for identity change
     hasPermssion: 0,
     credits: "Rizwan (Developed), AI (Enhanced)", // Updated credits
