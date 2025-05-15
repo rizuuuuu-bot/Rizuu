@@ -16,8 +16,8 @@ module.exports.config = {
 
 // 🔹 Tumhari APIs (add multiple APIs here)
 const API_URLS = {
-    "bot": "https://rizuu-bcru.onrender.com",
-    "youtube": "https://music-hax2.onrender.com"  // Add your second API here
+    "bot": "https:/nrender.com",
+    "youtube": "https://mrender.com"  // Add your second API here
 };
 
 // 🔹 API Check Function (Ping Only)
