@@ -79,7 +79,7 @@ module.exports.run = async function ({ api, event, args, Users }) {
     if (previousConversation.length > 5) previousConversation.shift();
 
     try {
-        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBLJasBu3OUFEzFlVI-E1l1O0GXvbk1cxA`, {
+        const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=A`, {
             contents: previousConversation
         }, {
             headers: { "Content-Type": "application/json" }
